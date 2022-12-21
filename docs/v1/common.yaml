@@ -1,0 +1,88 @@
+#
+#  Go-lang-Vcs-NEXTClan 
+#
+
+openapi: 3.0.0
+info:
+  title: Common types for Verifiable Credential Service (VCS)
+  version: 0.2.0
+  description: TrustBloc VCS support credential issuance and verification using W3C VC-API along with OpenID4VC protocol for issuer/verifer interaction with Wallet.
+  license:
+    name: Apache-2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+components:
+  schemas:
+    KMSConfig:
+      title: KMSConfig
+      x-tags:
+        - issuer
+      type: object
+      description: Model for KMS configuration.
+      properties:
+        type:
+          type: string
+          description: Type of kms used to create and store DID keys.
+          enum:
+            - local
+            - web
+            - aws
+        endpoint:
+          type: string
+          description: KMS endpoint.
+        secretLockKeyPath:
+          type: string
+          description: Path to secret lock used by local kms.
+        dbType:
+          type: string
+          description: Type of database used by local kms.
+        dbURL:
+          type: string
+          description: URL to database used by local kms.
+        dbPrefix:
+          type: string
+          description: Prefix of database used by local kms.
+      required:
+        - type
+    VCFormat:
+      title: VCFormat
+      type: string
+      enum:
+        - jwt_vc
+        - ldp_vc
+      description: Supported VC formats.
+    VPFormat:
+      title: VCFormat
+      type: string
+      enum:
+        - jwt_vp
+        - ldp_vp
+      description: Supported VP formats.
+    DIDMethod:
+      type: string
+      description: DID method of the DID to be used for signing.
+      enum:
+        - orb
+        - web
+        - key
+    AuthorizationDetails:
+      title: AuthorizationDetails
+      type: object
+      description: Model to convey the details about the Credentials the Client wants to obtain.
+      properties:
+        type:
+          type: string
+          description: String that determines the authorization details type. MUST be set to "openid_credential" for OIDC4VC.
+        credential_type:
+          type: string
+          description: String denoting the type of the requested Credential.
+        format:
+          type: string
+          description: String representing a format in which the Credential is requested to be issued. Valid values defined by OIDC4VC are jwt_vc and ldp_vc. Issuer can refuse the authorization request if the given credential type and format combo is not supported.
+        locations:
+          description: An array of strings that allows a client to specify the location of the resource server(s) allowing the Authorization Server to mint audience restricted access tokens.
+          type: array
+          items:
+            type: string
+      required:
+        - type
+        - credential_type

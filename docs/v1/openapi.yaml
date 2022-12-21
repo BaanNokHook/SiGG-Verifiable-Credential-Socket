@@ -1,0 +1,1364 @@
+#
+#  Go-lang-Vcs-NEXTClan 
+#
+
+openapi: 3.0.0
+info:
+  title: Verifiable Credential Service (VCS)
+  version: 0.2.0
+  description: TrustBloc VCS support credential issuance and verification using W3C VC-API along with OpenID4VC protocol for issuer/verifier interaction with Wallet.
+  license:
+    name: Apache-2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+  contact:
+    name: TrustBloc team.
+    email: hello@trustbloc.dev
+    url: 'https://trustbloc.dev'
+servers:
+  - url: 'http://localhost:8070'
+tags:
+  - name: issuer
+    description: issuer-related models and endpoints
+  - name: verifier
+    description: verifier-related models and endpoints
+  - name: healthcheck
+    description: server health check
+paths:
+  /healthcheck:
+    get:
+      summary: Health Check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+      operationId: get-healthcheck
+      description: Returns server health check status.
+      tags:
+        - healthcheck
+  '/{profileType}/profiles/{profileID}/well-known/did-config':
+    parameters:
+      - schema:
+          type: string
+        name: profileType
+        in: path
+        required: true
+        description: Profile Type
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: Profile Id
+    get:
+      summary: Request did-config
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DidConfig'
+      operationId: did-config
+      description: Returns did-config.
+      tags:
+        - devapi
+  '/issuer/{profileID}/.well-known/openid-configuration':
+    parameters:
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: Profile Id
+    get:
+      summary: Request openid-config
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WellKnownOpenIDConfiguration'
+      operationId: openid-config
+      description: Returns openid-config.
+      tags:
+        - issuer
+  '/request-object/{uuid}':
+    parameters:
+      - schema:
+          type: string
+        name: uuid
+        in: path
+        required: true
+        description: uuid of request object
+    get:
+      summary: Request request object by uuid
+      responses:
+        '200':
+          description: OK
+      operationId: request-object-by-uuid
+      description: Returns request object.
+      tags:
+        - devapi
+  '/issuer/profiles/{profileID}/credentials/issue':
+    parameters:
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: Issuer Profile ID.
+    post:
+      summary: Issue credential
+      tags:
+        - issuer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueCredentialData'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+      operationId: post-issue-credentials
+      description: Issuer credentials.
+  '/issuer/profiles/{profileID}/credentials/status/{statusID}':
+    get:
+      summary: Retrieves the credential status.
+      parameters:
+        - schema:
+            type: string
+          name: profileID
+          in: path
+          required: true
+          description: Issuer Profile ID.
+        - schema:
+            type: string
+          name: statusID
+          in: path
+          required: true
+          description: StatusID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+      operationId: get-credentials-status
+      description: Retrieves the credential status.
+      tags:
+        - issuer
+  '/issuer/profiles/{profileID}/credentials/status':
+    parameters:
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: Issuer Profile ID.
+    post:
+      summary: Updates credential status.
+      tags:
+        - issuer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCredentialStatusRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+      operationId: post-credentials-status
+      description: Updates credential status.
+  '/issuer/profiles/{profileID}/interactions/initiate-oidc':
+    parameters:
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: Issuer Profile ID.
+    post:
+      summary: Initiate OIDC Credential Issuance
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateOIDC4CIResponse'
+      operationId: initiate-credential-issuance
+      description: Used by the issuer to initiate OIDCI credential issuance interaction in VCS. The response contains initiate issuance URL which can be used to initiate the flow from issuer applications.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateOIDC4CIRequest'
+      tags:
+        - issuer
+  /issuer/interactions/push-authorization-request:
+    post:
+      summary: Push Authorization Details
+      tags:
+        - issuer
+      responses:
+        '200':
+          description: OK
+      operationId: push-authorization-details
+      description: Used by VCS OIDC public PAR endpoint to update transaction with authorization details.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushAuthorizationDetailsRequest'
+  /issuer/interactions/prepare-claim-data-authz-request:
+    post:
+      summary: Prepare Claim Data Authorization Request
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareClaimDataAuthorizationResponse'
+      operationId: prepare-authorization-request
+      description: Prepares OAuth Authorization Request parameters for issuer OIDC provider.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrepareClaimDataAuthorizationRequest'
+      tags:
+        - issuer
+  /issuer/interactions/validate-pre-authorized-code:
+    post:
+      summary: Validates pre-authorized code and user pin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatePreAuthorizedCodeResponse'
+      operationId: validate-pre-authorized-code-request
+      description: Validates pre-authorized code and user pin.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidatePreAuthorizedCodeRequest'
+      tags:
+        - issuer
+  /issuer/interactions/store-authorization-code:
+    post:
+      summary: Stores authorization code from issuer oauth provider
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreAuthorizationCodeResponse'
+      operationId: store-authorization-code-request
+      description: Stores authorization code from issuer oauth provider.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreAuthorizationCodeRequest'
+      tags:
+        - issuer
+  /issuer/interactions/exchange-authorization-code:
+    post:
+      summary: Exchange authorization code from issuer oauth provider
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeAuthorizationCodeResponse'
+      operationId: exchange-authorization-code-request
+      description: Exchange authorization code from issuer oauth provider.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExchangeAuthorizationCodeRequest'
+      tags:
+        - issuer
+  /issuer/interactions/prepare-credential:
+    post:
+      summary: Prepare Credential
+      tags:
+        - issuer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareCredentialResult'
+      operationId: prepare-credential
+      description: Used by VCS OIDC credential endpoint to request credential to conclude OIDC issuance flow.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrepareCredential'
+  '/verifier/profiles/{profileID}/credentials/verify':
+    parameters:
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: ID of profile
+    post:
+      summary: Verify credential
+      operationId: post-verify-credentials
+      tags:
+        - verifier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyCredentialData'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyCredentialResponse'
+  '/verifier/profiles/{profileID}/presentations/verify':
+    parameters:
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: ID of profile
+    post:
+      summary: Verify presentation
+      operationId: post-verify-presentation
+      tags:
+        - verifier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPresentationData'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyPresentationResponse'
+  '/verifier/profiles/{profileID}/interactions/initiate-oidc':
+    parameters:
+      - schema:
+          type: string
+        name: profileID
+        in: path
+        required: true
+        description: ID of profile
+    post:
+      summary: Used by verifier applications to initiate OpenID presentation flow through VCS
+      operationId: initiate-oidc-interaction
+      tags:
+        - verifier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateOIDC4VPData'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateOIDC4VPResponse'
+  /verifier/interactions/authorization-response:
+    post:
+      summary: Used by verifier applications to initiate OpenID presentation flow through VCS
+      operationId: check-authorization-response
+      tags:
+        - verifier
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id_token:
+                  type: string
+                  description: ID Token serves as an authentication receipt and includes metadata about the VP Token.
+                vp_token:
+                  type: string
+                  description: VP Token includes one or more Verifiable Presentations.
+                state:
+                  type: string
+                  description: State from authorization request for correlation
+      responses:
+        '200':
+          description: Sucess
+        '500':
+          description: Failure
+  '/verifier/interactions/{txID}/claim':
+    parameters:
+      - schema:
+          type: string
+        name: txID
+        in: path
+        required: true
+        description: ID of transaction
+    get:
+      summary: Used by verifier applications to get claims obtained during oidc4vp interaction.
+      operationId: retrieve-interactions-claim
+      tags:
+        - verifier
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                description: JSON claim containing credential subject
+  /oidc/par:
+    post:
+      summary: OIDC Pushed Authorization Request
+      tags:
+        - oidc4ci
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushedAuthorizationResponse'
+        '405':
+          description: Method Not Allowed
+        '413':
+          description: Request Entity Too Large
+        '429':
+          description: Too Many Requests
+      operationId: oidc-pushed-authorization-request
+      description: Client sends OAuth authorization request directly to authorization server and gets request URI in response that can be used as reference to the data in subsequent request to authorization endpoint.
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                response_type:
+                  type: string
+                  description: Value MUST be set to "code".
+                client_id:
+                  type: string
+                  description: The client identifier.
+                code_challenge:
+                  type: string
+                  description: 'A challenge derived from the code verifier that is sent in the authorization request, to be verified against later.'
+                code_challenge_method:
+                  type: string
+                  description: A method that was used to derive code challenge.
+                redirect_uri:
+                  type: string
+                  description: The authorization server redirects the user-agent to the client's redirection endpoint previously established with the authorization server during the client registration process or when making the authorization request.
+                scope:
+                  type: string
+                  description: The scope of the access request.
+                state:
+                  type: string
+                  description: An opaque value used by the client to maintain state between the request and callback. The authorization server includes this value when redirecting the user-agent back to the client. The parameter SHOULD be used for preventing cross-site request forgery.
+                authorization_details:
+                  type: string
+                  description: The authorization_details conveys the details about the credentials the wallet wants to obtain. Multiple authorization_details can be used with type openid_credential to request authorization in case of multiple credentials.
+                wallet_issuer:
+                  type: string
+                  description: Wallet's OpenID Connect Issuer URL. The Issuer will use the discovery process to determine the wallet's capabilities and endpoints. RECOMMENDED in Dynamic Credential Request.
+                user_hint:
+                  type: string
+                  description: An opaque user hint the wallet MAY use in subsequent callbacks to optimize the user's experience. RECOMMENDED in Dynamic Credential Request.
+                op_state:
+                  type: string
+                  description: 'String value identifying a certain processing context at the credential issuer. A value for this parameter is typically passed in an issuance initiation request from the issuer to the wallet. This request parameter is used to pass the  op_state value back to the credential issuer. The issuer must take into account that op_state is not guaranteed to originate from this issuer, could be an attack.'
+              required:
+                - response_type
+                - client_id
+                - code_challenge
+        description: ''
+  /oidc/authorize:
+    get:
+      summary: OIDC Authorization Request
+      responses:
+        '302':
+          description: Found
+          headers: {}
+          content:
+            application/x-www-form-urlencoded:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: REQUIRED. The authorization code generated by the authorization server. The authorization code MUST expire shortly after it is issued to mitigate the risk of leaks.
+                  state:
+                    type: string
+                    description: REQUIRED if the "state" parameter was present in the client authorization request. The exact value received from the client.
+                required:
+                  - code
+      operationId: oidc-authorize
+      description: 'OAuth 2.0 Authorization Request, which requests to grant access to the Credential endpoint.'
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: response_type
+          description: Value MUST be set to "code".
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: client_id
+          description: The client identifier.
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: code_challenge
+          description: 'A challenge derived from the code verifier that is sent in the authorization request, to be verified against later.'
+          required: true
+        - schema:
+            type: string
+          in: query
+          name: code_challenge_method
+          description: A method that was used to derive code challenge.
+        - schema:
+            type: string
+          in: query
+          name: redirect_uri
+          description: The authorization server redirects the user-agent to the client's redirection endpoint previously established with the authorization server during the client registration process or when making the authorization request.
+        - schema:
+            type: string
+          in: query
+          name: scope
+          description: The scope of the access request.
+        - schema:
+            type: string
+          in: query
+          name: state
+          description: An opaque value used by the client to maintain state between the request and callback. The authorization server includes this value when redirecting the user-agent back to the client. The parameter SHOULD be used for preventing cross-site request forgery.
+        - schema:
+            type: string
+          in: query
+          name: authorization_details
+          description: The authorization_details conveys the details about the credentials the wallet wants to obtain. Multiple authorization_details can be used with type openid_credential to request authorization in case of multiple credentials.
+        - schema:
+            type: string
+          in: query
+          name: wallet_issuer
+          description: Wallet's OpenID Connect Issuer URL. The Issuer will use the discovery process to determine the wallet's capabilities and endpoints. RECOMMENDED in Dynamic Credential Request.
+        - schema:
+            type: string
+          in: query
+          name: user_hint
+          description: An opaque user hint the wallet MAY use in subsequent callbacks to optimize the user's experience. RECOMMENDED in Dynamic Credential Request.
+        - schema:
+            type: string
+          in: query
+          name: op_state
+          description: 'String value identifying a certain processing context at the credential issuer. A value for this parameter is typically passed in an issuance initiation request from the issuer to the wallet. This request parameter is used to pass the  op_state value back to the credential issuer. The issuer must take into account that op_state is not guaranteed to originate from this issuer, could be an attack.'
+          required: true
+      tags:
+        - oidc4ci
+    parameters: []
+  /oidc/token:
+    post:
+      summary: OIDC Token Request
+      tags:
+        - oidc4ci
+      operationId: oidc-token
+      description: Issues access token and optionally a refresh token for the exchange of authorization code that client has obtained after successful authorization response.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+        '400':
+          description: Bad Request
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  type: string
+                  description: Value MUST be set to "authorization_code".
+                code:
+                  type: string
+                  nullable: true
+                  description: The authorization code received from the authorization server.
+                code_verifier:
+                  type: string
+                  nullable: true
+                  description: A cryptographically random string that is used to correlate the authorization request to the token request.
+                redirect_uri:
+                  type: string
+                  nullable: true
+                  description: 'REQUIRED, if the "redirect_uri" parameter was included in the authorization request, and their values MUST be identical.'
+                client_id:
+                  type: string
+                  description: 'REQUIRED, if the client is not authenticating with the authorization server.'
+                  nullable: true
+                pre-authorized_code:
+                  type: string
+                  nullable: true
+                  description: 'REQUIRED, if pre-auth flow'
+                user_pin:
+                  type: string
+                  nullable: true
+                  description: 'REQUIRED, if pre-auth flow and pin was required in issue request'
+              required:
+                - grant_type
+        description: ''
+  /oidc/redirect:
+    get:
+      summary: OIDC Redirect
+      tags:
+        - oidc4ci
+      operationId: oidc-redirect
+      description: OIDC redirect for handling response from issuer's OIDC provider and continue our OIDC authorize flow.
+      responses:
+        '303':
+          description: Redirect
+      parameters:
+        - schema:
+            type: string
+          name: code
+          in: query
+          required: true
+          description: auth code for issuer provider
+        - schema:
+            type: string
+          name: state
+          in: query
+          required: true
+          description: state
+  /oidc/credential:
+    post:
+      summary: OIDC Credential
+      tags:
+        - oidc4ci
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialResponse'
+      operationId: oidc-credential
+      description: Issues credentials in exchange for an authorization token.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialRequest'
+      parameters: []
+components:
+  schemas:
+    HealthCheckResponse:
+      title: HealthCheckResponse
+      x-tags:
+        - healthcheck
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status is "success" if server is up and running.
+        currentTime:
+          type: string
+          format: date-time
+          description: Current time of the server.
+      required:
+        - status
+      description: Response model for health check status.
+    DidConfig:
+      title: DidConfigResponse
+      x-tags:
+        - devapi
+      type: object
+      properties:
+        '@context':
+          type: string
+          description: context.
+        linked_dids:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: object
+          description: Presentation in jws(string) or jsonld(object) formats
+      description: DID Config response.
+    WellKnownOpenIDConfiguration:
+      title: WellKnownOpenIDConfiguration response
+      x-tags:
+        - issuer
+      type: object
+      properties:
+        authorization_endpoint:
+          type: string
+        issuer:
+          type: string
+        token_endpoint:
+          type: string
+        response_types_supported:
+          type: array
+          items:
+            type: string
+        credentials_supported:
+          type: object
+        credential_issuer:
+          $ref: '#/components/schemas/CredentialIssuer'
+        credential_endpoint:
+          type: string
+      required:
+        - authorization_endpoint
+        - issuer
+        - token_endpoint
+        - response_types_supported
+        - credential_supported
+        - credential_endpoint
+      description: OpenID Config response.
+    RequestObject:
+      title: RequestObject
+      x-tags:
+        - devapi
+      type: object
+      properties:
+        id:
+          type: string
+          description: id.
+        content:
+          type: string
+          description: Content of requested object
+      description: DID Config response.
+    VerifyCredentialData:
+      title: VerifyCredentialData
+      x-tags:
+        - verifier
+      type: object
+      description: Model for credential verification.
+      properties:
+        options:
+          $ref: '#/components/schemas/VerifyCredentialOptions'
+        credential:
+          oneOf:
+            - type: string
+            - type: object
+          description: Credential in jws(string) or jsonld(object) formats.
+      required:
+        - credential
+    CredentialIssuer:
+      title: CredentialIssuer
+      x-tag:
+        - issuer
+      type: object
+      properties:
+        display:
+          type: array
+          items:
+            type: object
+        name:
+          type: string
+        locale:
+          type: string
+    VerifyCredentialOptions:
+      title: VerifyCredentialOptions
+      x-tags:
+        - verifier
+      type: object
+      description: Options for verify credential.
+      properties:
+        challenge:
+          type: string
+          description: Chalange is added to the proof.
+        domain:
+          type: string
+          description: Domain is added to the proof.
+    VerifyCredentialResponse:
+      title: VerifyCredentialResponse
+      x-tags:
+        - verifier
+      type: object
+      description: Model for response of credentials verification.
+      properties:
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerifyCredentialCheckResult'
+    VerifyCredentialCheckResult:
+      title: VerifyCredentialCheckResult
+      x-tags:
+        - verifier
+      type: object
+      description: Verify credential response containing failure check details.
+      properties:
+        check:
+          type: string
+          description: Check title.
+        error:
+          type: string
+          description: Error message.
+        verificationMethod:
+          type: string
+          description: Verification method.
+      required:
+        - check
+        - error
+        - verificationMethod
+    VerifyPresentationData:
+      title: VerifyPresentationData
+      x-tags:
+        - verifier
+      type: object
+      description: Model for presentation verification.
+      properties:
+        options:
+          $ref: '#/components/schemas/VerifyPresentationOptions'
+        presentation:
+          oneOf:
+            - type: string
+            - type: object
+          description: Presentation in jws(string) or jsonld(object) formats.
+      required:
+        - presentation
+    VerifyPresentationOptions:
+      title: VerifyPresentationOptions
+      x-tags:
+        - verifier
+      type: object
+      description: Options for verify presentation.
+      properties:
+        challenge:
+          type: string
+          description: Challenge is added to the proof.
+        domain:
+          type: string
+          description: Domain is added to the proof.
+    VerifyPresentationResponse:
+      title: VerifyPresentationResponse
+      x-tags:
+        - verifier
+      type: object
+      description: Model for response of presentation verification.
+      properties:
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerifyPresentationCheckResult'
+    VerifyPresentationCheckResult:
+      title: VerifyPresentationCheckResult
+      x-tags:
+        - verifier
+      type: object
+      description: Verify presentation response containing failure check details.
+      properties:
+        check:
+          type: string
+          description: Check title.
+        error:
+          type: string
+          description: Error message.
+      required:
+        - check
+        - error
+    IssueCredentialData:
+      title: IssueCredentialData
+      x-tags:
+        - issuer
+      type: object
+      description: Model for issuer credential.
+      properties:
+        options:
+          $ref: '#/components/schemas/IssueCredentialOptions'
+        credential:
+          oneOf:
+            - type: string
+            - type: object
+          description: Credential in jws(string) or jsonld(object) formats.
+      required:
+        - credential
+    UpdateCredentialStatusRequest:
+      title: UpdateCredentialStatusRequest
+      x-tags:
+        - issuer
+      description: UpdateCredentialStatusRequest request struct for updating VC status.
+      properties:
+        credentialID:
+          type: string
+        credentialStatus:
+          $ref: '#/components/schemas/CredentialStatus'
+      required:
+        - credentialID
+        - credentialStatus
+      type: object
+    CredentialStatus:
+      title: CredentialStatus
+      x-tags:
+        - issuer
+      description: Credential status.
+      properties:
+        status:
+          type: string
+        type:
+          type: string
+      required:
+        - status
+        - type
+      type: object
+    IssueCredentialOptions:
+      title: IssueCredentialOptions
+      x-tags:
+        - issuer
+      type: object
+      description: Options for issuing credential.
+      properties:
+        verificationMethod:
+          type: string
+          description: The URI of the verificationMethod used for the proof. If omitted first ed25519 public key of DID (Issuer or Profile DID) will be used.
+        created:
+          type: string
+          description: The date of the proof. If omitted system time will be used.
+        challenge:
+          type: string
+          description: Chalange is added to the proof.
+        domain:
+          type: string
+          description: Domain is added to the proof.
+        credentialStatus:
+          $ref: '#/components/schemas/CredentialStatusOpt'
+    CredentialStatusOpt:
+      title: CredentialStatusOpt
+      x-tags:
+        - issuer
+      type: object
+      description: Options for issuing credential.
+      properties:
+        type:
+          type: string
+      required:
+        - type
+    InitiateOIDC4VPData:
+      title: InitiateOIDC4VPData
+      type: object
+      properties:
+        presentationDefinitionId:
+          type: string
+        purpose:
+          type: string
+    InitiateOIDC4VPResponse:
+      title: InitiateOIDC4VPResponse
+      type: object
+      properties:
+        authorizationRequest:
+          type: string
+        txID:
+          type: string
+      required:
+        - authorizationRequest
+        - txID
+    PrepareClaimDataAuthorizationRequest:
+      title: PrepareClaimDataAuthorizationRequest
+      type: object
+      description: Model for Prepare Claim Data Authorization Request.
+      x-tags:
+        - issuer
+      properties:
+        response_type:
+          type: string
+          description: Value MUST be set to "code".
+        scope:
+          type: array
+          items:
+            type: string
+        authorization_details:
+          $ref: ./common.yaml#/components/schemas/AuthorizationDetails
+        op_state:
+          type: string
+      required:
+        - response_type
+        - op_state
+    ExchangeAuthorizationCodeRequest:
+      title: ExchangeAuthorizationCodeRequest
+      type: object
+      description: Model for exchanging auth code from issuer oauth
+      x-tags:
+        - issuer
+      properties:
+        op_state:
+          type: string
+      required:
+        - op_state
+    ExchangeAuthorizationCodeResponse:
+      title: ExchangeAuthorizationCodeResponse
+      type: object
+      description: Response model for exchanging auth code from issuer oauth
+      x-tags:
+        - issuer
+      properties:
+        tx_id:
+          type: string
+      required:
+        - tx_id
+    StoreAuthorizationCodeRequest:
+      title: StoreAuthorizationCodeRequest
+      type: object
+      description: Model for storing auth code from issuer oauth
+      x-tags:
+        - issuer
+      properties:
+        op_state:
+          type: string
+        code:
+          type: string
+      required:
+        - op_state
+        - code
+    StoreAuthorizationCodeResponse:
+      title: StoreAuthorizationCodeResponse
+      type: object
+      description: Response model for storing auth code from issuer oauth
+      x-tags:
+        - issuer
+      properties:
+        tx_id:
+          type: string
+    ValidatePreAuthorizedCodeRequest:
+      title: ValidatePreAuthorizedCodeRequest
+      type: object
+      description: Model for validating pre-authorized code and pin.
+      x-tags:
+        - issuer
+      properties:
+        pre-authorized_code:
+          type: string
+          description: Pre authorized code.
+        user_pin:
+          type: string
+          description: User pin.
+      required:
+        - pre-authorized_code
+    ValidatePreAuthorizedCodeResponse:
+      title: ValidatePreAuthorizedCodeRequest
+      type: object
+      description: Model for validating pre-authorized code and pin.
+      x-tags:
+        - issuer
+      properties:
+        tx_id:
+          type: string
+          description: transaction id
+        op_state:
+          type: string
+          description: Op state.
+        scopes:
+          description: A list of pre-authorized scopes
+          type: array
+          items:
+            type: string
+      required:
+        - op_state
+        - scopes
+        - tx_id
+    PrepareClaimDataAuthorizationResponse:
+      title: PrepareClaimDataAuthorizationResponse
+      type: object
+      description: Model for Prepare Claim Data Authorization Response.
+      x-tags:
+        - issuer
+      properties:
+        authorization_request:
+          $ref: '#/components/schemas/OAuthParameters'
+        authorization_endpoint:
+          type: string
+          description: Issuer's OIDC provider authorization endpoint.
+        pushed_authorization_request_endpoint:
+          type: string
+          description: Issuer's OIDC provider PAR endpoint.
+        tx_id:
+          type: string
+          description: Transaction ID to correlate upcoming authorization response.
+      required:
+        - authorization_request
+        - authorization_endpoint
+        - tx_id
+    OAuthParameters:
+      title: OAuthParameters
+      x-tags:
+        - issuer
+      type: object
+      description: Model with key value pairs containing parameters to build OIDC core authorization request (RFC6749) for Issuer OIDC provider to perform wallet user authorization grant.
+      properties:
+        response_type:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        scope:
+          type: array
+          items:
+            type: string
+      required:
+        - response_type
+        - client_id
+        - client_secret
+        - scope
+    InitiateOIDC4CIRequest:
+      title: InitiateOIDC4CIRequest
+      type: object
+      description: Model for Initiate OIDC Credential Issuance Request.
+      properties:
+        credential_template_id:
+          type: string
+          description: 'Template of the credential to be issued while successfully concluding this interaction. REQUIRED, if the profile is configured to use multiple credential templates.'
+        client_initiate_issuance_url:
+          type: string
+          description: 'URL of the issuance initiation endpoint of a Wallet. Takes precedence over client_wellknown request parameter. If both client_initiate_issuance_url and client_wellknown are not provided then response initiate issuance URL will contain custom initiate issuance URL in format openid-initiate-issuance://.'
+        client_wellknown:
+          type: string
+          description: String containing wallet/holder application OIDC client wellknown configuration URL.
+        op_state:
+          type: string
+          description: 'String value created by the Credential Issuer and opaque to the Wallet that is used to bind the sub-sequent authentication request with the Credential Issuer to a context set up during previous steps. If the client receives a value for this parameter, it MUST include it in the subsequent Authentication Request to the Credential Issuer as the op_state parameter value. MUST NOT be used in Authorization Code flow when pre-authorized_code is present.'
+        claim_endpoint:
+          type: string
+          description: Claim endpoint of the Issuer from where credential claim data has to be requested after successfully acquiring access tokens.
+        grant_type:
+          type: string
+          description: Issuer can provide custom grant types through this parameter. This grant type has to be used while exchanging an access token for authorization code in later steps. If not provided then default to authorization_code.
+        scope:
+          type: array
+          description: Contains scopes that issuer expects VCS to use while requesting authorization code for claim data. Defaults to openid.
+          items:
+            type: string
+        response_type:
+          type: string
+          description: Contains response type that issuer expects VCS to use while performing OIDC authorization request. Defaults to token.
+        authorization_details:
+          type: string
+          description: Customizes what kind of access Issuer wants to give to VCS.
+        user_pin_required:
+          type: boolean
+          description: Required for Pre-Authorized Code Flow. Boolean value specifying whether the issuer expects presentation of a user PIN along with the Token Request in a pre-authorized code flow.
+        claim_data:
+          type: object
+          description: Required for Pre-Authorized Code Flow. VCS OIDC Service acts as OP for wallet applications
+      x-tags:
+        - issuer
+    InitiateOIDC4CIResponse:
+      title: InitiateOIDC4CIResponse
+      type: object
+      description: Model for Initiate OIDC Credential Issuance Response.
+      properties:
+        initiate_issuance_url:
+          type: string
+          description: OIDC4CI initiate issuance URL to be used by the Issuer to pass relevant information to the Wallet to initiate issuance flow. Supports both HTTP GET and HTTP Redirect. Issuers may present QR code containing request data for users to scan from their mobile Wallet app.
+        tx_id:
+          type: string
+          description: To be used by Issuer applications for correlation if needed.
+        user_pin:
+          type: string
+          description: Pre-authorized flow. Generated OTP pin for issuance.
+      required:
+        - initiate_issuance_url
+        - tx_id
+      x-tags:
+        - issuer
+    PushedAuthorizationResponse:
+      title: PushedAuthorizationResponse
+      x-tags:
+        - oidc4ci
+      type: object
+      description: Model for Pushed Authorization Response.
+      properties:
+        request_uri:
+          type: string
+          description: The request URI corresponding to the authorization request posted. This URI is a single-use reference to the respective request data in the subsequent authorization request.
+        expires_in:
+          type: integer
+          description: 'A JSON number that represents the lifetime of the request URI in seconds as a positive integer. The request URI lifetime is at the discretion of the authorization server but will typically be relatively short (e.g., between 5 and 600 seconds).'
+      required:
+        - request_uri
+        - expires_in
+    AccessTokenResponse:
+      title: AccessTokenResponse
+      x-tags:
+        - oidc4ci
+      type: object
+      description: Model for Access Token Response.
+      properties:
+        access_token:
+          type: string
+          description: The access token issued by the authorization server.
+        token_type:
+          type: string
+          description: The type of the token issued.
+        expires_in:
+          type: integer
+          description: The lifetime in seconds of the access token.
+        refresh_token:
+          type: string
+          description: 'The refresh token, which can be used to obtain new access tokens.'
+        scope:
+          type: string
+          description: 'OPTIONAL, if identical to the scope requested by the client; otherwise, REQUIRED.'
+        c_nonce:
+          type: string
+          description: String containing a nonce to be used to create a proof of possession of key material when requesting a credential.
+        c_nonce_expires_in:
+          description: Integer denoting the lifetime in seconds of the c_nonce.
+          type: integer
+      required:
+        - access_token
+        - token_type
+    PushAuthorizationDetailsRequest:
+      title: PushAuthorizationDetailsRequest
+      x-tags:
+        - issuer
+      type: object
+      description: Model for Push Authorization Details request.
+      properties:
+        op_state:
+          type: string
+        authorization_details:
+          $ref: ./common.yaml#/components/schemas/AuthorizationDetails
+      required:
+        - op_state
+        - authorization_details
+    PrepareCredential:
+      title: PrepareCredential
+      x-tags:
+        - issuer
+      type: object
+      description: Model for Prepare Credential request.
+      properties:
+        tx_id:
+          type: string
+          description: Transaction ID.
+        type:
+          type: string
+          description: Type of the credential being issued.
+        format:
+          type: string
+          description: Format of the credential being issued.
+        did:
+          type: string
+          description: DID to which issued credential has to be bound.
+      required:
+        - tx_id
+        - type
+    PrepareCredentialResult:
+      title: PrepareCredentialResult
+      x-tags:
+        - issuer
+      type: object
+      description: Model for Prepare Credential response.
+      properties:
+        credential:
+          oneOf:
+            - type: string
+            - type: object
+        format:
+          type: string
+          description: Format of issued credential.
+        retry:
+          type: boolean
+          description: TRUE if claim data is not yet available in the issuer OP server. This will indicate VCS OIDC to issue acceptance_token instead of credential response (Deferred Credential flow).
+      required:
+        - credential
+        - format
+        - retry
+    CredentialRequest:
+      title: CredentialRequest
+      x-tags:
+        - oidc4ci
+      type: object
+      description: Model for OIDC Credential request.
+      properties:
+        type:
+          type: string
+          description: Type of the credential being issued.
+        format:
+          type: string
+          description: Format of the credential being issued.
+        did:
+          type: string
+          description: DID to which issued credential has to be bound.
+        proof:
+          $ref: '#/components/schemas/JWTProof'
+      required:
+        - type
+        - did
+    JWTProof:
+      title: JWTProof
+      x-tags:
+        - oidc4ci
+      type: object
+      properties:
+        proof_type:
+          type: string
+          description: REQUIRED. JSON String denoting the proof type. Currently the only supported proof type is 'jwt'.
+        jwt:
+          type: string
+          description: REQUIRED. Signed JWT as proof of key possession.
+      required:
+        - proof_type
+        - jwt
+    CredentialResponse:
+      title: CredentialResponse
+      x-tags:
+        - oidc4ci
+      type: object
+      description: Model for OIDC Credential response.
+      properties:
+        format:
+          type: string
+          description: JSON string denoting the format of the issued Credential.
+        credential:
+          oneOf:
+            - type: string
+            - type: object
+        acceptance_token:
+          type: string
+          description: A JSON string containing a token subsequently used to obtain a Credential. MUST be present when credential is not returned.
+        c_nonce:
+          type: string
+          description: JSON string containing a nonce to be used to create a proof of possession of key material when requesting a Credential.
+        c_nonce_expires_in:
+          type: integer
+          description: JSON integer denoting the lifetime in seconds of the c_nonce.
+      required:
+        - format
+        - credential
+  securitySchemes: {}

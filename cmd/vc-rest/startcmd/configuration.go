@@ -1,0 +1,120 @@
+/*
+Go-lang-Vcs-NEXTClan
+*/
+
+package startcmd
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"net/http"
+
+	"github.com/hyperledger/aries-framework-go-ext/component/vdr/longform"
+	"github.com/hyperledger/aries-framework-go-ext/component/vdr/orb"
+	ariesdid "github.com/hyperledger/aries-framework-go/pkg/doc/did"
+	vdrapi "github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
+	vdrpkg "github.com/hyperledger/aries-framework-go/pkg/vdr"
+	"github.com/hyperledger/aries-framework-go/pkg/vdr/httpbinding"
+	"github.com/hyperledger/aries-framework-go/pkg/vdr/key"
+	"github.com/hyperledger/aries-framework-go/pkg/vdr/web"
+	tlsutils "github.com/trustbloc/cmdutil-go/pkg/utils/tls"
+)
+
+// mode in which to run the vc-rest service
+type mode string
+
+const (
+	verifier mode = "verifier"
+	issuer   mode = "issuer"
+	holder   mode = "holder"
+	combined mode = "combined"
+)
+
+// Configuration for the vc-rest API server.
+type Configuration struct {
+	RootCAs           *x509.CertPool
+	VDR               vdrapi.Registry
+	StartupParameters *startupParameters
+}
+
+func prepareConfiguration(parameters *startupParameters) (*Configuration, error) {
+	rootCAs, err := tlsutils.GetCertPool(parameters.tlsParameters.systemCertPool, parameters.tlsParameters.caCerts)
+	if err != nil {
+		return nil, err
+	}
+
+	vdr, err := createVDRI(parameters.universalResolverURL, parameters.orbDomain,
+		&tls.Config{RootCAs: rootCAs, MinVersion: tls.VersionTLS12})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Configuration{
+		RootCAs:           rootCAs,
+		VDR:               vdr,
+		StartupParameters: parameters,
+	}, nil
+}
+
+func createVDRI(universalResolver, orbDomain string, tlsConfig *tls.Config) (vdrapi.Registry, error) {
+	var opts []vdrpkg.Option
+
+	if universalResolver != "" {
+		universalResolverVDRI, err := httpbinding.New(universalResolver,
+			httpbinding.WithAccept(acceptsDID), httpbinding.WithHTTPClient(&http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: tlsConfig,
+				},
+			}))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create new universal resolver vdr: %w", err)
+		}
+
+		// add universal resolver vdr
+		opts = append(opts, vdrpkg.WithVDR(universalResolverVDRI))
+	}
+
+	longformVDR, err := longform.New()
+	if err != nil {
+		return nil, err
+	}
+
+	orbVDR, err := orb.New(nil, orb.WithDomain(orbDomain), orb.WithTLSConfig(tlsConfig))
+	if err != nil {
+		return nil, err
+	}
+
+	// add bloc vdr
+	opts = append(opts, vdrpkg.WithVDR(longformVDR), vdrpkg.WithVDR(orbVDR),
+		vdrpkg.WithVDR(key.New()), vdrpkg.WithVDR(key.New()), vdrpkg.WithVDR(&webVDR{
+			http: &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: tlsConfig,
+				}},
+			VDR: web.New(),
+		}))
+
+	return vdrpkg.New(opts...), nil
+}
+
+// acceptsDID returns if given did method is accepted by VC REST api
+func acceptsDID(method string) bool {
+	return method == didMethodVeres || method == didMethodElement || method == didMethodSov ||
+		method == didMethodWeb || method == didMethodFactom || method == didMethodORB ||
+		method == didMethodKey || method == didMethodION
+}
+
+type webVDR struct {
+	http *http.Client
+	*web.VDR
+}
+
+func (w *webVDR) Read(didID string, opts ...vdrapi.DIDMethodOption) (*ariesdid.DocResolution, error) {
+	docRes, err := w.VDR.Read(didID, append(opts, vdrapi.WithOption(web.HTTPClientOpt, w.http))...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read did web: %w", err)
+	}
+
+	return docRes, nil
+}

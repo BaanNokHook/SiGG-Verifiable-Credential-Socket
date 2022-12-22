@@ -1,0 +1,28 @@
+/*
+Go-lang-Vcs-NEXTClan
+*/
+
+package kms_test
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/trustbloc/vcs/pkg/kms"
+)
+
+func TestNewRegistry(t *testing.T) {
+	r := kms.NewRegistry(nil)
+	require.NotNil(t, r)
+}
+
+func TestRegistry_GetKeyManager(t *testing.T) {
+	t.Run("Default config local kms", func(t *testing.T) {
+		r := kms.NewRegistry(nil)
+		require.NotNil(t, r)
+
+		_, err := r.GetKeyManager(nil)
+		require.NoError(t, err)
+	})
+}
